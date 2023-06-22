@@ -9,7 +9,7 @@ If a Pokemon learns a move by level-up in FireRed that they do not learn in Emer
 ### addpurifiedmoves (WIP)
 
 This script modifies the level-up learnsets of all Pokemon that can be purified from a shadow Pokemon in Pokemon Colosseum or Pokemon XD: Gale of Darkness.
-If a Pokemon would have learned a new move by purification, this move will be added to the beginning of this Pokemon's level-up learnset.
+If a Pokemon would have learned a new move by purification, this move will be learnable at the minimum level this Pokemon could have been purified.
 These moves can now be learned at a Move Reminder.
 
 ### addeventmoves (WIP)
