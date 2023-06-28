@@ -23,13 +23,135 @@ def main():
     deoxys.name = "Deoxys"
     deoxys.pokedex_number = 386
     deoxys.url = "https://bulbapedia.bulbagarden.net/wiki/Deoxys_(Pok%C3%A9mon)/Generation_III_learnset"
+    deoxys.types = ["Psychic"]
     deoxys = populate_deoxys_speed(deoxys)
     pokemon_list.append(deoxys)
     for pokemon in pokemon_list:
-        if "Mew" in pokemon.name:
-            for move in pokemon.emerald_tutor_moves:
-                print(move.name)
+        if "Bulbasaur" in pokemon.name:
+            for move in pokemon.emerald_level_up_moves:
+                #print(move.is_damaging)
+                pass
+    stat_mismatch(pokemon_list)
 
+##################
+### DATA ANALYTICS
+##################
+
+def stat_mismatch(pokemon_list):
+    counter = 0
+    special_types = ["Water", "Fire", "Electric", "Psychic", "Dark", "Grass", "Ice", "Dragon"]
+    physical_types = ["Normal", "Bug", "Fighting", "Ghost", "Poison", "Rock", "Ground", "Steel", "Flying"]
+    for pokemon in pokemon_list:
+        if len(pokemon.types) == 2:
+            if pokemon.types[0] in special_types and pokemon.types[1] in special_types:
+                print(pokemon.name)
+                counter += 1
+            if pokemon.types[0] in physical_types and pokemon.types[1] in physical_types:
+                print(pokemon.name)
+                counter += 1
+
+def stab_access_analytics(pokemon_list):
+    stab_proportion = 0
+    double_stab_missing = 0
+    for pokemon in pokemon_list:
+        if len(pokemon.types) == 1:
+            has_stab_level_up_move = False
+            stab_proportion += 1
+            for move in pokemon.emerald_level_up_moves:
+                if pokemon.types[0] == move.type and move.is_damaging:
+                    has_stab_level_up_move = True 
+            if not has_stab_level_up_move:
+                print(pokemon.name)
+                stab_proportion -= 1
+                print("Missing any STAB")
+        else:
+            has_primary_stab = False
+            has_secondary_stab = False
+            stab_proportion += 1
+            for move in pokemon.emerald_level_up_moves:
+                if pokemon.types[0] == move.type and move.is_damaging:
+                    has_primary_stab = True
+            for move in pokemon.emerald_level_up_moves:
+                if pokemon.types[1] == move.type and move.is_damaging:
+                    has_secondary_stab = True
+            if (not has_primary_stab) or (not has_secondary_stab):
+                #print(pokemon.name)
+                #stab_proportion -= 1
+                pass
+            #if not has_primary_stab and has_secondary_stab:
+                #print("Missing primary STAB")
+            #if not has_secondary_stab and has_primary_stab:
+                #print("Missing secondary STAB")
+            if not has_primary_stab and not has_secondary_stab:
+                print(pokemon.name)
+                stab_proportion -= 1
+                double_stab_missing += 1
+                print("Missing BOTH STAB")
+    print("The number of Pokemon with STAB coverage is: " + str((stab_proportion)))
+    print("The number of two-typed Pokemon with no STAB level-up moves is:" + str(double_stab_missing))
+
+
+def movepool_gain_analytics(pokemon_list):
+    pokemon_with_added_moves_count = 0
+    total_added_moves_count = 0
+    max_added_moves_count = 0
+    for pokemon in pokemon_list:
+        added_moves = []
+        added_moves_count = 0
+        if len(pokemon.firered_level_up_moves) > 0:
+            for move in pokemon.emerald_level_up_moves:
+                if move.level == -1:
+                    if not move.name in added_moves:
+                        added_moves.append(move.name)
+                        added_moves_count += 1
+        for move in pokemon.purified_moves:
+            in_emerald_learnset = False
+            for othermove in pokemon.emerald_level_up_moves:
+                if othermove.name == move.name:
+                    in_emerald_learnset = True
+            if not in_emerald_learnset:
+                if not move.name in added_moves:
+                    added_moves.append(move.name)
+                    added_moves_count += 1
+        for move in pokemon.firered_tutor_moves:
+            in_emerald_learnset = False
+            for othermove in pokemon.emerald_tutor_moves:
+                if othermove.name == move.name:
+                    in_emerald_learnset = True
+            if not in_emerald_learnset:
+                if not move.name in added_moves:
+                    added_moves.append(move.name)
+                    added_moves_count += 1
+        for move in pokemon.xd_tutor_moves:
+            in_emerald_learnset = False
+            for othermove in pokemon.emerald_tutor_moves:
+                if othermove.name == move.name:
+                    in_emerald_learnset = True
+            if not in_emerald_learnset:
+                if not move.name in added_moves:
+                    added_moves.append(move.name)
+                    added_moves_count += 1
+        for move in pokemon.event_moves:
+            if not move.name in added_moves:
+                added_moves.append(move.name)
+                added_moves_count += 1
+        if(added_moves_count > 0):
+            pokemon_with_added_moves_count += 1
+            total_added_moves_count += added_moves_count
+            if(added_moves_count > max_added_moves_count):
+                max_added_moves_count = added_moves_count
+            print("===" + pokemon.name + "===")
+            print("Total moves added: " + str(added_moves_count))
+            for move in added_moves:
+                print(move)
+    print("========")
+    print("TOTAL POKEMON WITH ADDED MOVES: " + str(pokemon_with_added_moves_count))
+    print("AVERAGE ADDED MOVES: " + str(round(total_added_moves_count / pokemon_with_added_moves_count, 1)))
+    print("MAX ADDED MOVES: " + str(max_added_moves_count))
+
+######################
+### SCRAPING RESOURCES
+######################
 
 def populate_hoenn_pokedex():
     user_agent = 'Mozilla/5.0 (Windows; U; Windows NT 5.1; en-US; rv:1.9.0.7) Gecko/2009021910 Firefox/3.0.7'
@@ -56,6 +178,7 @@ def populate_hoenn_pokedex():
     print("empty pokedex made.")
 
     name = ""
+    types = []
     pokedex_number = -1
     url = ""
 
@@ -81,14 +204,19 @@ def populate_hoenn_pokedex():
                     name = line[line.find(')">')+3:line.find('</a>')]
                     url = "https://bulbapedia.bulbagarden.net/wiki/" + line[line.find('/wiki/')+6:line.find('_(Pok')] + "_(Pok%C3%A9mon)/Generation_III_learnset"
                     name_found = True
+                elif '_(type)' in line:
+                    types.append(line[line.find('title="')+7:line.find(' (type)')])
 
                 if name == "Deoxys":
+                    types = []
                     continue
 
-                if name_found and pokedex_number_found:
+                if name_found and pokedex_number_found and "</tr>" in line:
                     output_pokemon_list[pokedex_number - 1].name = name
                     output_pokemon_list[pokedex_number - 1].pokedex_number = pokedex_number
                     output_pokemon_list[pokedex_number - 1].url = url
+                    output_pokemon_list[pokedex_number - 1].types = types
+                    types = []
                     name_found = False
                     pokedex_number_found = False
                     print("updated pokemon! continuing...")
@@ -238,6 +366,7 @@ def populate_purified_moves(input_pokemon_list):
         found_move = False
 
         name = ""
+        level = -1
 
         temp_line = ""
         special_counter = -3
@@ -254,9 +383,18 @@ def populate_purified_moves(input_pokemon_list):
             if not found_start_keyword:
                 continue
 
-            # search for moves in line
+            # because of the organization of Bulbapedia's pages, 
+            # we have to check for mass outbreaks under this header too
+            # these ultimately affect only three Pokemon (Seedot, Nuzleaf, and Shiftry)
+            # and these moves aren't uniquely obtained through mass outbreaks.    
             if "Mass outbreak" in line:
                 mass_outbreak_flag = True
+
+            # retrieving purification level
+            if "Level" in line and "+" in line:
+                level = int(line[line.find("Level ")+6:line.find("+")])
+
+            # search for moves in line
             if "_(move)" in line:
                 special_counter = counter
                 temp_line = line
@@ -272,7 +410,7 @@ def populate_purified_moves(input_pokemon_list):
                     mass_outbreak_flag = False
                     pokemon.mass_outbreak_moves.append(Move(name))
                 else:
-                    pokemon.purified_moves.append(Move(name))
+                    pokemon.purified_moves.append(Move(name, level))
             
             counter = counter + 1
 
@@ -460,7 +598,7 @@ def populate_level_up_moves(input_pokemon_list):
         special_counter = -3
         counter = 0
         firered_flag = False
-
+        is_damaging = False
 
         temp_stored_page_read = open(str(pokemon.pokedex_number) + ".txt", "r", encoding="utf8")
         for line in temp_stored_page_read:
@@ -484,12 +622,15 @@ def populate_level_up_moves(input_pokemon_list):
 
             # search for moves in line
             if "_(move)" in line:
+                if "<b>" in line:
+                    is_damaging = True
                 special_counter = counter
                 temp_line = line
             elif "_(type)" in line and special_counter + 2 == counter:
                 found_move = True
                 special_counter = -3
                 name = temp_line[temp_line.find('title="')+7:temp_line.find(' (move)')]
+                type = line[line.find('title="')+7:line.find(' (type)')]
                 # store level
                 if firered_flag:
                     if "N/A" in temp_line_firered:
@@ -505,11 +646,12 @@ def populate_level_up_moves(input_pokemon_list):
             if found_move:
                 found_move = False
                 if firered_flag:
-                    pokemon.firered_level_up_moves.append(Move(name, firered_level))
-                    pokemon.emerald_level_up_moves.append(Move(name, emerald_level))
+                    pokemon.firered_level_up_moves.append(Move(name, firered_level, type, is_damaging))
+                    pokemon.emerald_level_up_moves.append(Move(name, emerald_level, type, is_damaging))
                 else:
-                    pokemon.emerald_level_up_moves.append(Move(name, emerald_level))
+                    pokemon.emerald_level_up_moves.append(Move(name, emerald_level, type, is_damaging))
             
+                is_damaging = False
             counter = counter + 1
 
     # revert directory to default
